@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import Nav from './component/Nav';
 import Header from './component/Header';
+import Menyu from './component/Menyu';
 import EmptyCart from './component/EmptyCart';
 import Favorites from './component/Favorites';
 import { FiTrash2, FiPlus, FiMinus, FiCheckCircle } from 'react-icons/fi';
@@ -11,11 +12,21 @@ const App = () => {
   const [cart, setCart] = useState([]);
   const [favorites, setFavorites] = useState([]);
 
-  // Buyurtma qabul qilinganligi (muvaffaqiyat) modali holati
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState(null);
 
-  // Savatga qo'shish funksiyasi
+  // Sevimlilarga qo'shish / o'chirish (Header va Menyu uchun umumiy)
+  const handleToggleFavorite = (product) => {
+    setFavorites((prev) => {
+      const exists = prev.some((item) => item.id === product.id);
+      if (exists) {
+        return prev.filter((item) => item.id !== product.id);
+      }
+      return [...prev, product];
+    });
+  };
+
+  // Savatga qo'shish (Header, Menyu va Favorites sahifasi uchun umumiy)
   const handleAddToCart = (product, redirectToCart = false) => {
     setCart((prevCart) => {
       const existing = prevCart.find((item) => item.id === product.id);
@@ -34,7 +45,6 @@ const App = () => {
     }
   };
 
-  // Miqdorni o'zgartirish (+ / -)
   const handleUpdateQty = (id, delta) => {
     setCart((prev) =>
       prev
@@ -49,18 +59,15 @@ const App = () => {
     );
   };
 
-  // Savatdan mahsulotni o'chirish
   const handleRemoveFromCart = (id) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // Mahsulot jo'natilganda (Buyurtma berilganda) ishlaydigan funksiya
   const handleCheckout = () => {
-    // Tasodifiy buyurtma raqami
     const randomOrderNum = Math.floor(100000 + Math.random() * 900000);
     setOrderNumber(randomOrderNum);
     setOrderSuccess(true);
-    setCart([]); // Savat tozalanadi
+    setCart([]);
   };
 
   const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -68,7 +75,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-[#EAEAEA] flex flex-col justify-between relative">
-      {/* Navbar */}
+      {/* Har doim yuqoridagi Navbar va live badge lar */}
       <Nav
         onGoHome={() => setCurrentPage('home')}
         onOpenCart={() => setCurrentPage('cart')}
@@ -78,12 +85,23 @@ const App = () => {
         showBanner={currentPage === 'home'}
       />
 
-      {/* 1. BOSH SAHIFA (Header / Katalog) */}
+      {/* 1. ASOSIY KATALOG (Bosh sahifa) */}
       {currentPage === 'home' && (
-        <Header onAddToCart={handleAddToCart} />
+        <main className="flex-1 pb-12">
+          <Header 
+            onAddToCart={handleAddToCart}
+            onToggleFavorite={handleToggleFavorite}
+            favorites={favorites}
+          />
+          <Menyu 
+            onAddToCart={handleAddToCart}
+            onToggleFavorite={handleToggleFavorite}
+            favorites={favorites}
+          />
+        </main>
       )}
 
-      {/* 2. SAVATCHA SAHIFASI */}
+      {/* 2. SAVAT SAHIFASI */}
       {currentPage === 'cart' && (
         cart.length === 0 ? (
           <EmptyCart onGoToCatalog={() => setCurrentPage('home')} />
@@ -94,7 +112,6 @@ const App = () => {
             </h1>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-              {/* Mahsulotlar ro'yxati */}
               <div className="flex-1 w-full space-y-4">
                 {cart.map((item) => (
                   <div
@@ -156,7 +173,6 @@ const App = () => {
                 ))}
               </div>
 
-              {/* Jami hisob kartasi */}
               <div className="w-full lg:w-[350px] bg-white rounded-[30px] p-6 shadow-sm">
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-gray-500 font-medium">ИТОГО</span>
@@ -164,7 +180,6 @@ const App = () => {
                     {totalPrice.toLocaleString()} ₸
                   </span>
                 </div>
-                {/* Buyurtmani rasmiylashtirish tugmasi */}
                 <button
                   type="button"
                   onClick={handleCheckout}
@@ -188,7 +203,7 @@ const App = () => {
         />
       )}
 
-      {/* ================= RUSCHA QABUL QILINDI XABARI (MODAL) ================= */}
+      {/* 4. BUYURTMA QABUL QILINDI MODALI */}
       {orderSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -219,7 +234,7 @@ const App = () => {
               type="button"
               onClick={() => {
                 setOrderSuccess(false);
-                setCurrentPage('home'); // Bosh sahifaga qaytadi
+                setCurrentPage('home');
               }}
               className="w-full py-3.5 bg-[#101010] text-white font-medium rounded-2xl hover:bg-black/90 active:scale-95 transition-all cursor-pointer"
             >
